@@ -5,54 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mô phỏng Thiết bị Máy tính 3D</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
-        }
+        body { margin: 0; overflow: hidden; background-color: #f0f4f8; font-family: Arial, sans-serif; }
+        #loading { position: absolute; top: 45%; width: 100%; text-align: center; color: #34495e; font-size: 18px; font-weight: bold; }
         #info-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 350px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: none;
-            z-index: 10;
+            position: absolute; top: 20px; right: 20px; width: 350px;
+            background: rgba(255, 255, 255, 0.95); padding: 20px;
+            border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none; z-index: 10;
         }
-        #info-panel h2 {
-            margin-top: 0;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        #info-panel h4 {
-            margin: 15px 0 5px 0;
-            color: #e67e22;
-        }
-        #info-panel p {
-            margin: 0;
-            line-height: 1.5;
-            font-size: 14px;
-            color: #34495e;
-        }
+        #info-panel h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        #info-panel h4 { margin: 15px 0 5px 0; color: #e67e22; }
+        #info-panel p { margin: 0; line-height: 1.5; font-size: 14px; color: #34495e; }
         #instructions {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            pointer-events: none;
+            position: absolute; bottom: 20px; left: 20px; background: rgba(0, 0, 0, 0.7);
+            color: white; padding: 10px 15px; border-radius: 5px; pointer-events: none;
         }
     </style>
 </head>
 <body>
-
+    <div id="loading">Đang tải thư viện 3D từ hệ thống...<br><span style="font-size:14px;font-weight:normal;">(Nếu chờ lâu, vui lòng nhấn Ctrl + F5)</span></div>
+    
     <div id="info-panel">
         <h2 id="part-name">Tên thiết bị</h2>
         <h4>Chức năng cơ bản:</h4>
@@ -66,40 +38,41 @@
         👆 Nhấp chuột vào từng linh kiện để xem chi tiết!
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 
-    <script>
-        // Dữ liệu từ Sách giáo khoa
+        // Ẩn thông báo khi thư viện đã tải thành công
+        document.getElementById('loading').style.display = 'none';
+
         const hardwareData = {
             "Mainboard": {
-                name: "Bảng mạch chính (Mainboard)",
-                function: "Tất cả các thiết bị bên trong thân máy được gắn với một bảng mạch, gọi là bảng mạch chính[cite: 226].",
-                [cite_start]specs: "Là nền tảng giao tiếp và kết nối bộ xử lí, bộ nhớ trong, bộ nhớ ngoài và các bảng mạch mở rộng[cite: 269]."
+                name: "Bảng mạch chính",
+                function: "Gồm bộ xử lí, bộ nhớ trong, bộ nhớ ngoài và có thể gắn thêm các bảng mạch mở rộng.",
+                specs: "Nền tảng giao tiếp và kết nối tất cả thiết bị số trong hệ thống."
             },
             "CPU": {
                 name: "Bộ xử lí trung tâm (CPU)",
-                function: "Thực hiện các chương trình máy tính [cite: 237][cite_start], điều khiển toàn bộ máy tính hoạt động[cite: 270].",
-                [cite_start]specs: "Tần số đồng hồ xung (thường tính bằng GHz) [cite: 271][cite_start], số lõi (core) cho phép thực hiện đồng thời nhiều nhiệm vụ[cite: 272]."
+                function: "Thực hiện các phép toán và điều khiển toàn bộ máy tính hoạt động theo chương trình.",
+                specs: "Tốc độ đo bằng tần số xung nhịp (GHz). Có thể có nhiều lõi (đơn vị xử lí)."
             },
             "RAM": {
                 name: "Bộ nhớ trong (RAM)",
-                function: "Dùng để ghi dữ liệu tạm thời trong khi chạy các chương trình[cite: 252]. [cite_start]Chứa dữ liệu trong khi máy hoạt động[cite: 273]. [cite_start]Dữ liệu bị xoá khi tắt máy[cite: 252].",
-                [cite_start]specs: "Dung lượng nhớ tính theo MB, GB (ví dụ 8 GB, 16 GB) và thời gian truy cập trung bình[cite: 257, 258]."
+                function: "Nơi chứa dữ liệu trong khi máy hoạt động.",
+                specs: "Dung lượng nhớ (thường theo GB) và thời gian truy cập trung bình."
             },
             "ROM": {
                 name: "Bộ nhớ trong (ROM)",
-                function: "Chỉ có thể đọc mà không thể ghi hay xoá[cite: 253]. [cite_start]Lưu dữ liệu hệ thống, chương trình khởi động lâu dài, không cần nguồn nuôi[cite: 254].",
-                [cite_start]specs: "Dung lượng nhỏ hơn RAM, thời gian truy cập trung bình lớn hơn[cite: 260]."
+                function: "Lưu dữ liệu hệ thống cố định, không cần nguồn nuôi.",
+                specs: "Dung lượng nhỏ hơn RAM, thời gian truy cập trung bình lớn hơn."
             },
             "HDD": {
-                name: "Bộ nhớ ngoài (Ổ cứng/SSD)",
-                function: "Dùng để lưu dữ liệu lâu dài, không cần nguồn nuôi[cite: 263]. [cite_start]Chứa dữ liệu lưu trữ[cite: 273].",
-                [cite_start]specs: "Dung lượng thường tính theo GB hay TB[cite: 265]. [cite_start]Thời gian truy cập trung bình (SSD nhanh hơn đĩa cơ)[cite: 267, 268]."
+                name: "Bộ nhớ ngoài",
+                function: "Chứa dữ liệu lưu trữ lâu dài.",
+                specs: "Dung lượng tính theo GB hoặc TB. Tốc độ đọc/ghi dữ liệu chậm hơn bộ nhớ trong."
             }
         };
 
-        // Thiết lập Scene cơ bản
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xddeeff);
 
@@ -110,17 +83,15 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // Ánh sáng
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(10, 20, 10);
         scene.add(dirLight);
 
-        // Tạo các linh kiện
         const objects = [];
 
         // 1. Mainboard
@@ -154,7 +125,7 @@
         scene.add(ram1); scene.add(ram2);
         objects.push(ram1, ram2);
 
-        // 4. ROM (Chip nhỏ trên mainboard)
+        // 4. ROM
         const romGeo = new THREE.BoxGeometry(1, 0.6, 1.5);
         const romMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
         const rom = new THREE.Mesh(romGeo, romMat);
@@ -163,7 +134,7 @@
         scene.add(rom);
         objects.push(rom);
 
-        // 5. Ổ cứng HDD/SSD
+        // 5. HDD
         const hddGeo = new THREE.BoxGeometry(4, 1.2, 6);
         const hddMat = new THREE.MeshPhongMaterial({ color: 0x7f8c8d });
         const hdd = new THREE.Mesh(hddGeo, hddMat);
@@ -172,13 +143,10 @@
         scene.add(hdd);
         objects.push(hdd);
 
-        // Tương tác nhấp chuột (Raycaster)
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        window.addEventListener('click', onMouseClick, false);
-
-        function onMouseClick(event) {
+        window.addEventListener('click', (event) => {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -189,11 +157,9 @@
                 const selectedObj = intersects[0].object;
                 const dataId = selectedObj.userData.id;
                 
-                // Hiệu ứng nhấp nháy nhẹ khi chọn
                 selectedObj.material.emissive.setHex(0x555555);
                 setTimeout(() => { selectedObj.material.emissive.setHex(0x000000); }, 200);
 
-                // Hiển thị thông tin
                 document.getElementById("info-panel").style.display = "block";
                 document.getElementById("part-name").innerText = hardwareData[dataId].name;
                 document.getElementById("part-function").innerText = hardwareData[dataId].function;
@@ -201,17 +167,14 @@
             } else {
                 document.getElementById("info-panel").style.display = "none";
             }
-        }
+        });
 
-        // Xử lý khi đổi kích thước cửa sổ
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        });
 
-        // Vòng lặp Render
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
